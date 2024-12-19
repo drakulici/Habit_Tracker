@@ -1,6 +1,6 @@
 # habit.py - 
 """
-This module defines the Habit class for managing habits, including saving and deleting habits in a database.
+This module defines the Habit class for managing habits, including saving,deleting and marking as complete in a database.
 Class Habit represents a habit with attributes such as name, description, frequency, and created date. 
            Provides methods to save, delete and check off as completed habits in the database.
 Methods:
@@ -15,7 +15,6 @@ import datetime
 from database import Database
 
 
-
 class Habit:   # This class represents a habit with attributes such as name, description, frequency, and created date. 
     def __init__(self, name=None, description=None, frequency=None, created_date=None):    
         self.name = name
@@ -26,6 +25,8 @@ class Habit:   # This class represents a habit with attributes such as name, des
         else:
             self.created_date = created_date # If the created_date is not None, it is setting the created_date to the provided value.
         self.database =  Database()    # database instance is created in the __init__ method so that it can be used to interact with the database throughout the class.
+
+    
 
 
     def save(self):
@@ -40,7 +41,17 @@ class Habit:   # This class represents a habit with attributes such as name, des
         print(f"Habit with id {id} has been deleted successfully!")
 
     def mark_completed(self, habit_id):
-        completed_date = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-        data = [(int(habit_id), completed_date)]
-        self.database.insert("completed_dates", data)
-        print("\nHabit marked as completed for the day. Well done! Keep it up!")
+        habit_id = int(habit_id)
+        today = datetime.datetime.now()
+        completed_date = today
+        countQuery = self.database.cursor.execute("SELECT COUNT(*) FROM completed_dates WHERE habit_id = ? AND DATE(completed_date) = DATE(?)",(habit_id, completed_date)).fetchall()
+        count = countQuery
+        if count[0][0] == 0:          
+            completed_date = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+            data = [(int(habit_id), completed_date)]        # USER INPUTS ARE ALWAYS STR!!!! SO WE NEED TO CONVERT TO INT!!! 4 hours lost!!! 
+            self.database.insert("completed_dates", data)
+            print("\nHabit marked as completed for the day. Well done! Keep it up!")
+        else:
+            print("\nHabit has already been marked as completed for the day.")
+            return
+        
